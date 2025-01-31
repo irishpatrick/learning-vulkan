@@ -81,9 +81,11 @@ target_link_libraries(star PRIVATE
         assimp::assimp
 )
 
-add_custom_command(
-        TARGET star
-        PRE_BUILD
-        COMMAND cd ${CMAKE_SOURCE_DIR}/shaders && python3 compile.py
+add_custom_target(
+        build_shaders
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/shaders
+        DEPENDS ${CMAKE_SOURCE_DIR}/shaders/shader.vert ${CMAKE_SOURCE_DIR}/shaders/shader.frag
+        COMMAND python3 compile.py
+        VERBATIM
 )
-
+add_dependencies(star build_shaders)
