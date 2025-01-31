@@ -20,7 +20,7 @@ def inline():
 
             varname = file.stem.replace('.', '_')
             size = len(bytecode)
-            fp.write(f'constexpr std::array<unsigned char, {size}> {varname}[] = {{ {','.join(str(x) for x in bytecode)} }};')
+            fp.write(f"constexpr std::array<unsigned char, {size}> {varname}[] = {{ {','.join(str(x) for x in bytecode)} }};")
 
 
 

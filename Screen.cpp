@@ -71,13 +71,14 @@ static const std::vector<const char *> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice pd, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     uint32_t qfCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &qfCount, nullptr);
+    assert(pd);
+    vkGetPhysicalDeviceQueueFamilyProperties(pd, &qfCount, nullptr);
     std::vector<VkQueueFamilyProperties> families(qfCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &qfCount, families.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(pd, &qfCount, families.data());
 
     int i = 0;
     for (const auto& queueFamily  : families) {
@@ -87,7 +88,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surfa
 
         if (surface != VK_NULL_HANDLE) {
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(pd, i, surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
@@ -140,12 +141,13 @@ bool checkDevExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
-    QueueFamilyIndices indices = findQueueFamilies(device, surface);
-    bool extensionsSupported = checkDevExtensionSupport(device);
+bool isDeviceSuitable(VkPhysicalDevice pd, VkSurfaceKHR surface) {
+    assert(pd);
+    QueueFamilyIndices indices = findQueueFamilies(pd, surface);
+    bool extensionsSupported = checkDevExtensionSupport(pd);
     bool swapchainAdequate = false;
     if (extensionsSupported) {
-        auto swapChainSupport = querySwapChainSupport(device, surface);
+        auto swapChainSupport = querySwapChainSupport(pd, surface);
         swapchainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentMode.empty();
     }
 
@@ -246,7 +248,7 @@ void Screen::create() {
     info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     info.pEngineName = "No engine";
     info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    info.apiVersion = VK_API_VERSION_1_4;
+    info.apiVersion = VK_API_VERSION_1_3;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -281,15 +283,19 @@ void Screen::create() {
     std::vector<VkPhysicalDevice> devices(numDevices);
     vkEnumeratePhysicalDevices(instance, &numDevices, devices.data());
 
-    for (const auto dev : devices) {
+    for (VkPhysicalDevice dev : devices) {
         vkGetPhysicalDeviceProperties(dev, &properties);
         vkGetPhysicalDeviceFeatures(dev, &features);
 
-        const bool fitness = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader;
+        const bool fitness = (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU || properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) && features.geometryShader;
         if (fitness && isDeviceSuitable(dev, surface)) {
             pDevice = dev;
             break;
         }
+    }
+
+    if (pDevice == VK_NULL_HANDLE) {
+        throw std::runtime_error("no suitable device found");
     }
 
 
@@ -847,7 +853,7 @@ void Screen::createDescriptorPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 2;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 4;
     descriptorMax = poolInfo.maxSets;
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {

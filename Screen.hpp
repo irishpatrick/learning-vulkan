@@ -14,6 +14,7 @@
 #include <vk_mem_alloc.h>
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 struct SDL_Window;
