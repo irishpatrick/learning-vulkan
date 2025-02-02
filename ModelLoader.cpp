@@ -74,3 +74,21 @@ void ModelLoader::processNode(std::vector<Mesh> &meshes, const aiScene* scene, a
         processNode(meshes, scene, node->mChildren[i]);
     }
 }
+
+Mesh ModelLoader::loadSkybox(const std::string &fn) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(
+            fn.c_str(),
+            aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_FlipUVs | aiProcess_FlipWindingOrder);
+    if (scene == nullptr) {
+        throw std::runtime_error("cannot open model file " + fn);
+    }
+
+    std::vector<Mesh> meshes;
+
+    processNode(meshes, scene, scene->mRootNode);
+
+    meshes[0].createBuffers();
+    meshes[0].upload();
+    return meshes[0];
+}

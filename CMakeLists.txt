@@ -70,6 +70,10 @@ add_executable(star main.cpp
         DescriptorSet.hpp
         ModelLoader.cpp
         ModelLoader.hpp
+        components.cpp
+        components.hpp
+        entities.cpp
+        entities.hpp
 )
 target_link_libraries(star PRIVATE
         SDL2-static
@@ -80,6 +84,7 @@ target_link_libraries(star PRIVATE
         GPUOpen::VulkanMemoryAllocator
         assimp::assimp
 )
+target_compile_definitions(star PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 add_custom_target(
         build_shaders

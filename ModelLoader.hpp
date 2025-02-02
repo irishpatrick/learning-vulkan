@@ -18,6 +18,7 @@ public:
     ~ModelLoader() = default;
 
     std::vector<Mesh> load(const std::string& fn);
+    Mesh loadSkybox(const std::string& fn);
 
 private:
     ModelLoader() = default;
